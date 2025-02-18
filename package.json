@@ -1,0 +1,25 @@
+{
+  "name": "tools-wm",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@faker-js/faker": "^9.5.0",
+    "axios": "^1.7.9",
+    "gologin": "^2.1.12",
+    "imap-simple": "^5.1.0",
+    "lodash": "^4.17.21",
+    "mailparser": "^3.7.2",
+    "nodemon": "^3.1.9",
+    "proxy-agent": "^6.5.0",
+    "puppeteer-core": "^24.2.1"
+  },
+  "type": "module"
+}
