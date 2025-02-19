@@ -14,12 +14,16 @@ const MAX_COUNT_ORDER = 250;
 const MAX_ITEM_ORDER = 12;
 const FILE_ITEM = "./data/item.txt";
 const FILE_CI = "./data/ci.txt";
+const FILE_TEST = "./data/test.txt";
+const FILE_ITEM_STOCK = "./data/item-stock.txt";
 const SUCCESS_FILE = "./data/success.txt";
 const URL_LOGIN_ACCOUNT = "https://www.walmart.com/account/login";
 export {
   DOMAIN_EMAIL,
   FILE_CI,
   FILE_ITEM,
+  FILE_ITEM_STOCK,
+  FILE_TEST,
   MAX_COUNT_ORDER,
   MAX_ITEM_ORDER,
   NAME_USER,

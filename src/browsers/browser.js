@@ -1,65 +1,99 @@
 import GoLogin from "gologin/src/gologin.js";
+import { homedir } from "os";
+import { join } from "path";
 import puppeteer from "puppeteer-core";
 import { checkProxy } from "../proxy/checker.js";
 import { getProxy } from "../proxy/get-proxy.js";
 import { TOKEN_GOLOGIN } from "../utils/contants.js";
+import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
 const MAX_RETRIES_CONNECT = 5;
-const browserRunner = async (profileId) => {
+const pathChrome = join(
+  homedir(),
+  ".gologin",
+  "browser",
+  "orbita-browser-132",
+  "chrome.exe"
+);
+const browserRunner = async (profileId, options) => {
+  const { screenH, screenW, x, y, port } = options;
+  let args = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-blink-features=AutomationControlled",
+    `--window-size=${screenW},${screenH}`,
+    `--window-position=${x},${y}`,
+    "--high-dpi-support=1",
+  ];
+
   const GL = new GoLogin({
     token: TOKEN_GOLOGIN,
     profile_id: profileId,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-blink-features=AutomationControlled",
-    ],
+    args,
+    executablePath: pathChrome,
+    tmpdir: "D:\\profile_gologin",
   });
+
   let page = null;
   let browser = null;
-  try {
-    let retries = 0;
-    let success = false;
-    while (retries++ < MAX_RETRIES && !success) {
-      try {
-        const proxy = await getProxy();
-        const isLiveProxy = await checkProxy(proxy);
-        if (!isLiveProxy) {
-          return console.log("Proxy is not live. Skipping login.");
+  let retries = 0;
+  let connected = false;
+
+  while (retries < MAX_RETRIES && !connected) {
+    retries++;
+    try {
+      // Lấy và kiểm tra proxy theo cổng đã cho
+      const proxy = await getProxy(port);
+      logger.info(`[Thông tin] Đang sử dụng cổng: ${port}`);
+      const isLiveProxy = await checkProxy(proxy);
+      if (!isLiveProxy) {
+        logger.info("[Cảnh báo] Proxy không hoạt động. Bỏ qua đăng nhập.");
+        return { browser: null, page: null, GL };
+      }
+
+      // Khởi chạy GoLogin để lấy wsUrl
+      const { wsUrl } = await GL.start();
+      let connectRetries = 0;
+      let puppeteerConnected = false;
+
+      // Kết nối Puppeteer với retry logic
+      while (connectRetries < MAX_RETRIES_CONNECT && !puppeteerConnected) {
+        connectRetries++;
+        try {
+          browser = await puppeteer.connect({
+            browserWSEndpoint: wsUrl,
+            ignoreHTTPSErrors: true,
+            defaultViewport: null,
+          });
+          puppeteerConnected = true;
+        } catch (error) {
+          logger.error(
+            `[Lỗi kết nối Puppeteer (thử ${connectRetries}/${MAX_RETRIES_CONNECT})] ${error}`
+          );
         }
-        const { wsUrl } = await GL.start();
-        let connectCout = 0;
-        let connectSuccess = false;
-        while (connectCout++ < MAX_RETRIES_CONNECT && !connectSuccess) {
-          try {
-            browser = await puppeteer.connect({
-              browserWSEndpoint: wsUrl,
-              ignoreHTTPSErrors: true,
-              defaultViewport: null,
-            });
-            connectSuccess = true;
-          } catch (error) {
-            console.error(error);
-            continue;
-          }
-        }
-        const pages = await browser.pages();
-        if (pages.length > 1) {
-          await pages[1].close();
-        }
-        page = pages[0];
-        success = true;
-      } catch (error) {
-        console.error(error);
+      }
+      if (!puppeteerConnected) {
+        logger.error("[Lỗi] Không kết nối được Puppeteer sau nhiều lần thử.");
         continue;
       }
-    }
 
-    return { browser, page: page, GL };
-  } catch (error) {
-    console.error("Error:", error);
+      // Đóng page không cần thiết nếu có hơn 1
+      const pages = await browser.pages();
+      if (pages.length > 1) await pages[1].close();
+      page = pages[0];
+      connected = true;
+    } catch (error) {
+      logger.error(
+        `[Lỗi trong quá trình khởi tạo trình duyệt (thử ${retries}/${MAX_RETRIES})] ${error}`
+      );
+    }
   }
-  return { GL, browser, page };
+
+  if (!connected) {
+    logger.error("[Lỗi] Không thể khởi tạo trình duyệt sau nhiều lần thử.");
+  }
+
+  return { browser, page, GL };
 };
 
 export { browserRunner };

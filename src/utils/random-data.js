@@ -54,6 +54,10 @@ const generatePhone = () => {
   });
 };
 
+const generatePort = () => {
+  return _.random(40000, 40049);
+};
+
 const generateEmail = (username, userstate, domain) => {
   const firstName = faker.name.firstName();
   const email = `${firstName}${generateRandomNumber(
@@ -73,6 +77,7 @@ export {
   generateEmail,
   generatePassword,
   generatePhone,
+  generatePort,
   generateRandomName,
   generateRandomNumber,
   generateRandomString,

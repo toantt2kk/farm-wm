@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "start": "node src/main.js",
+    "dev": "nodemon src/main.js"
   },
   "keywords": [],
   "author": "",
@@ -13,13 +13,17 @@
   "dependencies": {
     "@faker-js/faker": "^9.5.0",
     "axios": "^1.7.9",
+    "better-sqlite3": "^9.6.0",
     "gologin": "^2.1.12",
     "imap-simple": "^5.1.0",
     "lodash": "^4.17.21",
     "mailparser": "^3.7.2",
     "nodemon": "^3.1.9",
     "proxy-agent": "^6.5.0",
-    "puppeteer-core": "^24.2.1"
+    "puppeteer-core": "^24.2.1",
+    "reflect-metadata": "^0.2.2",
+    "typeorm": "^0.3.20",
+    "winston": "^3.17.0"
   },
   "type": "module"
 }

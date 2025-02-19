@@ -1,10 +1,16 @@
+import {
+  itemInStockCount,
+  randomItem,
+  updateItem,
+} from "../database/models/item.js";
 import { calculateAdditions } from "../utils/calculate.js";
 import {
   MAX_COUNT_ORDER,
   MAX_ITEM_ORDER,
   TIMEOUT_REQUEST_PAGE,
 } from "../utils/contants.js";
-import { delay, pickAndRemove } from "../utils/helpers.js";
+import { delay } from "../utils/helpers.js";
+import { logger } from "../utils/logger.js";
 import {
   checkElementExits,
   checkXpathExits,
@@ -16,6 +22,9 @@ import {
 const DOM_SUBSCRIPTION = {
   DISABLE: '//div[contains(text(), "Not Available")]',
   NOT_AVAIL: 'input[name="subscription options"][disabled]',
+  WARNING_ITEM:
+    '//span[contains(text(), "item in your cart is currently unavailable. ")]',
+  CLICK_SUB: 'input[name="subscription options"]',
   SUB_BUTTON:
     '//div[@id="ip-subscription-options-subscribe-wplus"]//span[contains(text(), "$")]',
   SET_WEEK: "#subscription-icon-0",
@@ -26,43 +35,61 @@ const DOM_SUBSCRIPTION = {
   BUTTON_REMOVE: "//button[contains(text(), 'Remove')]",
   QUANTITY_INCREASE: "//button[contains(@aria-label, 'Increase quantity')]",
   BUTTON_CHECKOUT: 'button[data-automation-id="checkout"]',
-  TEXT_PRICE: 'div[data-sensitivity="severe"]',
+  TEXT_PRICE_BLACK:
+    '//div[@data-testid="line-price"][contains(@class, "black")]',
+  TEXT_PRICE_GREEN:
+    '//div[@data-testid="line-price"][contains(@class, "green")]',
   SET_UP_DIALOG: 'button[data-testid="setup-subscription-view-button"]',
 };
 
-const subcriptionsItem = async (page, itemList) => {
+const subcriptionsItem = async (page) => {
   let orderSuccess = false;
   let price = 0;
+  const itemIntockCount = await itemInStockCount();
+  while (!orderSuccess && itemIntockCount) {
+    const itemId = await randomItem();
 
-  while (!orderSuccess && itemList.length > 0) {
-    const itemId = pickAndRemove(itemList);
     if (!itemId) break;
 
-    console.log(`Đang xử lý mặt hàng: ${itemId}`);
+    logger.info(`Đang xử lý mặt hàng: ${itemId}`);
     try {
-      if (!(await loadPage(page, itemId))) continue;
-      if (await checkSubscriptionDisabled(page)) continue;
-      if (!(await initiateSubscription(page))) continue;
+      if (!(await loadPage(page, itemId))) {
+        logger.warn(`[${itemId}] Không tải được trang. Bỏ qua.`);
+        continue;
+      }
+      if (await checkSubscriptionDisabled(page)) {
+        logger.warn(`[${itemId}] Tùy chọn đăng ký bị vô hiệu hóa. Bỏ qua.`);
+        await updateItem(itemId);
+        continue;
+      }
+      if (!(await initiateSubscription(page))) {
+        logger.warn(`[${itemId}] Khởi tạo đăng ký không thành công. Bỏ qua.`);
+        continue;
+      }
       if (await checkOnlyItem(page)) {
+        logger.warn(`[${itemId}] Chỉ còn 1 sản phẩm. Loại bỏ khỏi giỏ.`);
         await removeItemFromCart(page);
+        await updateItem(itemId);
         continue;
       }
 
+      logger.info(`[${itemId}] Chuyển đến trang giỏ hàng.`);
       await page.goto("https://www.walmart.com/cart", {
         timeout: TIMEOUT_REQUEST_PAGE,
         waitUntil: ["domcontentloaded", "load", "networkidle2"],
       });
 
       const priceItem = await getPrice(page);
-      if (priceItem >= 250) {
-        console.log(`Giá mặt hàng ${itemId} quá cao. Bỏ qua.`);
+      if (priceItem >= 250 || priceItem === null) {
+        logger.warn(
+          `[${itemId}] Giá ${priceItem} quá cao hoặc giỏ còn quá ít. Bỏ qua mặt hàng.`
+        );
         await removeItemFromCart(page);
+        await updateItem(itemId);
         continue;
       }
 
-      console.log(
-        `Giá của mặt hàng ${itemId}: ${priceItem}. Điều chỉnh số lượng...`
-      );
+      logger.info(`[${itemId}] Giá: ${priceItem}. Điều chỉnh số lượng...`);
       const totalCount = calculateAdditions(priceItem, MAX_COUNT_ORDER);
       price = priceItem * totalCount;
       await adjustItemQuantity(page, totalCount);
@@ -72,8 +99,9 @@ const subcriptionsItem = async (page, itemList) => {
         waitForPageLoad(page),
       ]);
       orderSuccess = true;
+      logger.info(`[${itemId}] Đặt đơn thành công với tổng giá: $${price}`);
     } catch (error) {
-      console.log(`Lỗi khi xử lý mặt hàng ${itemId}: ${error.message}`);
+      logger.error(`Lỗi khi xử lý mặt hàng ${itemId}: ${error.message}`);
     }
   }
   return { status: orderSuccess, price };
@@ -85,8 +113,11 @@ const loadPage = async (page, itemId) => {
       timeout: TIMEOUT_REQUEST_PAGE,
       waitUntil: ["domcontentloaded", "load", "networkidle2"],
     });
+    await page.mouse.move(250, 250);
+    await page.mouse.wheel({ deltaY: 320 });
     return true;
-  } catch {
+  } catch (error) {
+    logger.error(`Lỗi tải trang cho mặt hàng ${itemId}: ${error.message}`);
     return false;
   }
 };
@@ -101,52 +132,95 @@ const checkSubscriptionDisabled = async (page) => {
 };
 
 const initiateSubscription = async (page) => {
-  await clickByXPath(page, DOM_SUBSCRIPTION.SUB_BUTTON);
-  await delay(2);
-  await clickElement(page, DOM_SUBSCRIPTION.SET_WEEK);
-  await delay(2);
-  await clickElement(page, DOM_SUBSCRIPTION.BUTTON_SUB_CART);
+  try {
+    await clickElement(page, DOM_SUBSCRIPTION.CLICK_SUB);
+    await delay(2);
+    await clickElement(page, DOM_SUBSCRIPTION.SET_WEEK);
+    await delay(2);
+    await clickElement(page, DOM_SUBSCRIPTION.BUTTON_SUB_CART);
 
-  const check = await Promise.race([
-    checkElementExits(page, DOM_SUBSCRIPTION.SET_UP_DIALOG, 10),
-    checkXpathExits(page, DOM_SUBSCRIPTION.OUT_OF_STOCK, 10),
-    checkElementExits(page, DOM_SUBSCRIPTION.CHECK_ORDER_PLACE, 10),
-  ]);
-  return check.selector === DOM_SUBSCRIPTION.CHECK_ORDER_PLACE;
+    const check = await Promise.race([
+      checkElementExits(page, DOM_SUBSCRIPTION.SET_UP_DIALOG, 10),
+      checkXpathExits(page, DOM_SUBSCRIPTION.OUT_OF_STOCK, 10),
+      checkElementExits(page, DOM_SUBSCRIPTION.CHECK_ORDER_PLACE, 10),
+    ]);
+    return check.selector === DOM_SUBSCRIPTION.CHECK_ORDER_PLACE;
+  } catch (error) {
+    logger.error(`Lỗi khởi tạo đăng ký: ${error.message}`);
+    return false;
+  }
 };
 
 const removeItemFromCart = async (page) => {
-  await clickByXPath(page, DOM_SUBSCRIPTION.BUTTON_REMOVE, 10);
-  await delay(2);
+  try {
+    await clickByXPath(page, DOM_SUBSCRIPTION.BUTTON_REMOVE, 10);
+    await delay(2);
+    logger.info("Đã loại bỏ sản phẩm khỏi giỏ hàng.");
+  } catch (error) {
+    logger.error(`Lỗi khi loại bỏ sản phẩm khỏi giỏ: ${error.message}`);
+  }
 };
 
 const adjustItemQuantity = async (page, totalCount) => {
-  for (let i = 1; i < Math.min(totalCount, MAX_ITEM_ORDER); i++) {
+  const count = Math.min(totalCount, MAX_ITEM_ORDER);
+  logger.info(`Điều chỉnh số lượng đến ${count}`);
+  for (let i = 1; i < count; i++) {
     await clickByXPath(page, DOM_SUBSCRIPTION.QUANTITY_INCREASE, 10);
   }
 };
 
 const checkOnlyItem = async (page) => {
-  return (
-    await checkXpathExits(
-      page,
-      "//span[contains(text(), 'Only ') and contains(text(), ' left')]"
-    )
-  ).isShow;
+  const result = await checkXpathExits(
+    page,
+    "//span[contains(text(), 'Only ') and contains(text(), ' left')]"
+  );
+  return result.isShow;
 };
 
 const getPrice = async (page) => {
-  let checkPrice = await page
-    .waitForSelector(DOM_SUBSCRIPTION.TEXT_PRICE, { timeout: 5000 })
-    .catch(() => false);
-  if (!checkPrice) {
-    await page.reload({
-      timeout: TIMEOUT_REQUEST_PAGE,
-      waitUntil: ["domcontentloaded", "load", "networkidle2"],
-    });
+  const check = await Promise.race([
+    checkXpathExits(page, DOM_SUBSCRIPTION.TEXT_PRICE_GREEN, 15),
+    checkXpathExits(page, DOM_SUBSCRIPTION.TEXT_PRICE_BLACK, 15),
+    checkXpathExits(page, DOM_SUBSCRIPTION.WARNING_ITEM, 15),
+  ]);
+  switch (check.selector) {
+    case DOM_SUBSCRIPTION.TEXT_PRICE_GREEN:
+      return await greenPrice(page);
+    case DOM_SUBSCRIPTION.TEXT_PRICE_BLACK:
+      return await blackPrice(page);
+    case DOM_SUBSCRIPTION.WARNING_ITEM:
+      logger.warn("Sản phẩm đã hết hàng.");
+      return null;
+    default:
+      return null;
   }
+};
+
+const blackPrice = async (page) => {
   return await page.evaluate(() => {
-    const element = document.querySelector('div[data-sensitivity="severe"]');
+    const xpath = '//div[@data-testid="line-price"][contains(@class, "black")]';
+    const element = document.evaluate(
+      xpath,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+
+    return element ? Number(element.innerText.replace("$", "").trim()) : null;
+  });
+};
+const greenPrice = async (page) => {
+  return await page.evaluate(() => {
+    const xpath = '//div[@data-testid="line-price"][contains(@class, "green")]';
+    const element = document.evaluate(
+      xpath,
+      document,
+      null,
+      XPathResult.FIRST_ORDERED_NODE_TYPE,
+      null
+    ).singleNodeValue;
+
     return element ? Number(element.innerText.replace("$", "").trim()) : null;
   });
 };

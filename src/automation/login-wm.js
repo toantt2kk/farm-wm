@@ -9,6 +9,7 @@ import {
   USER_STATE,
 } from "../utils/contants.js";
 import { delay } from "../utils/helpers.js";
+import { logger } from "../utils/logger.js";
 import { generateEmail, generatePhone } from "../utils/random-data.js";
 import {
   checkElementExits,
@@ -19,6 +20,7 @@ import {
   typeText,
   waitForPageLoad,
 } from "./utils/helpers.js";
+
 const MAX_RETRIES_REGISTER = 5;
 
 const SELECTORS = {
@@ -42,8 +44,10 @@ const enterEmail = async (page, email) => {
     checkElementExits(page, SELECTORS.emailInput, 25),
   ]);
   if (element.selector === SELECTORS.emailInput) {
+    logger.info(`[Đang nhập email] Nhập email: ${email}`);
     await typeText(page, SELECTORS.emailInput, email);
   } else {
+    logger.error("[Lỗi] Không tìm thấy trường nhập email. Thoát.");
     process.exit(1);
   }
   await Promise.all([enterKey(page), waitForPageLoad(page)]);
@@ -55,22 +59,25 @@ const enterFormInfo = async (
   type = "NONE"
 ) => {
   await page.waitForSelector(SELECTORS.form);
+  logger.info("[Thông tin] Điền thông tin form đăng ký");
   await typeText(page, SELECTORS.firstName, firstName);
   await typeText(page, SELECTORS.lastName, lastName);
-  type === "NONE" && (await typeText(page, SELECTORS.phoneNumber, phone));
+  if (type === "NONE") {
+    await typeText(page, SELECTORS.phoneNumber, phone);
+  }
   await typeText(page, SELECTORS.password, password);
   await Promise.all([enterKey(page), waitForPageLoad(page)]);
 };
 
 const enterCode = async (page, code) => {
-  if (
-    !!(await page.waitForSelector(SELECTORS.otpInput, {
-      visible: true,
-      timeout: 5000,
-    }))
-  ) {
+  logger.info("[Thông tin] Nhập mã OTP");
+  const otpInputVisible = await page.waitForSelector(SELECTORS.otpInput, {
+    visible: true,
+    timeout: 5000,
+  });
+  if (otpInputVisible) {
     const inputs = await page.$$(SELECTORS.otpInput);
-    if (inputs.length === 0) throw new Error("OTP input not found");
+    if (inputs.length === 0) throw new Error("Không tìm thấy ô nhập OTP");
     for (let i = 0; i < code.length; i++) {
       await inputs[i].type(code[i], { delay: 36 });
     }
@@ -80,16 +87,22 @@ const enterCode = async (page, code) => {
 
 const waitingCode = async (timeout, getCodeFunc) => {
   const start = Date.now();
+  logger.info(`[Thông tin] Đang chờ mã trong ${timeout} giây...`);
   while (Date.now() - start < timeout * 1000) {
     const code = await getCodeFunc();
-    if (code) return code.trim();
+    if (code) {
+      logger.info("[Thông tin] Nhận được mã OTP");
+      return code.trim();
+    }
     await delay(5);
   }
+  logger.error("[Lỗi] Hết thời gian chờ mã OTP");
   return null;
 };
 
 const loginWm = async (page, info) => {
   try {
+    logger.info(`[Đăng nhập WM] Truy cập ${URL_LOGIN_WM}`);
     await page.goto(URL_LOGIN_WM, {
       timeout: TIMEOUT_REQUEST_PAGE,
       waitUntil: "domcontentloaded",
@@ -103,26 +116,34 @@ const loginWm = async (page, info) => {
 
     const codePhone = await waitingCode(60, () => getCodePhone(info.phoneId));
     if (!codePhone) {
+      logger.error("[Lỗi] Không nhận được mã OTP từ điện thoại");
       await cancellingPhone(info.phoneId);
       return "NO_CODE_PHONE";
     }
     await enterCode(page, codePhone);
     await waitForPageLoad(page);
+    logger.info("[Thành công] Đăng nhập WM thành công");
     return "SUCCESS";
   } catch (error) {
-    console.error("Error logging in WM:", error);
+    logger.error(`[Lỗi đăng nhập WM] ${error}`);
     await cancellingPhone(info.phoneId);
     return "SERVER_ERROR";
   }
 };
 
 const loginWmNoPhone = async (page, info) => {
-  console.log("Account info", info);
+  logger.info(
+    `[Đăng ký không cần điện thoại] Thông tin tài khoản: ${JSON.stringify(
+      info
+    )}`
+  );
   try {
+    logger.info(`[Đăng ký không cần điện thoại] Truy cập ${URL_REG_NO_PHONE}`);
     await page.goto(URL_REG_NO_PHONE, {
       timeout: TIMEOUT_REQUEST_PAGE,
       waitUntil: ["domcontentloaded", "networkidle2"],
     });
+    // await clickElement(page, SELECTORS.createAccount, 25);
     await Promise.all([
       clickElement(page, SELECTORS.createAccount, 25),
       waitForPageLoad(page),
@@ -133,7 +154,9 @@ const loginWmNoPhone = async (page, info) => {
     const codeEmail = await waitingCode(60, () => getCodeFromEmail(info.email));
     if (!codeEmail) return "NO_CODE_MAIL";
     await enterCode(page, codeEmail);
+
     await delay(5);
+    logger.info(`[Đăng ký không cần điện thoại] Chuyển đến ${URL_LOGIN_WM}`);
     await page.goto(URL_LOGIN_WM, {
       timeout: TIMEOUT_REQUEST_PAGE,
       waitUntil: ["domcontentloaded", "networkidle2"],
@@ -146,30 +169,35 @@ const loginWmNoPhone = async (page, info) => {
       checkElementExits(page, SELECTORS.inputSearch, 25),
     ]);
     if (checked.selector === SELECTORS.sendCode) {
+      logger.info("[Thông tin] Gửi lại mã OTP qua email");
       await clickByXPath(page, SELECTORS.sendCode, 25);
-      const codeEmail = await waitingCode(60, () =>
+      const newCodeEmail = await waitingCode(60, () =>
         getCodeFromEmail(info.email)
       );
-      if (!codeEmail) return "NO_CODE_MAIL";
-      await enterCode(page, codeEmail);
+      if (!newCodeEmail) return "NO_CODE_MAIL";
+      await enterCode(page, newCodeEmail);
     }
+    logger.info("[Thành công] Đăng ký không cần điện thoại thành công");
     return "SUCCESS";
   } catch (error) {
-    console.log("SERVER_ERROR");
+    logger.error(`[Lỗi đăng ký không cần điện thoại] ${error}`);
     return "SERVER_ERROR";
   }
 };
-const loginType = "NO_PHONE"; // "NONE"
+
+const loginType = "NO_PHONE"; // hoặc "NONE"
 const processLogin = async (page, info) => {
   let retriesRegister = 0;
   let statusLogin;
-  while (
-    retriesRegister++ < MAX_RETRIES_REGISTER &&
-    statusLogin !== "SUCCESS"
-  ) {
+  while (retriesRegister < MAX_RETRIES_REGISTER && statusLogin !== "SUCCESS") {
+    retriesRegister++;
+    logger.info(`[Quá trình đăng nhập] Lần thử ${retriesRegister}`);
+
     if (statusLogin === "NO_CODE_MAIL") {
       info = generateEmail(NAME_USER, USER_STATE, DOMAIN_EMAIL);
+      logger.info(`[Cập nhật] Email mới: ${info.email}`);
     }
+
     if (loginType === "NO_PHONE") {
       Object.assign(info, { phone: generatePhone(), phoneId: null });
       statusLogin = await loginWmNoPhone(page, info);
@@ -178,19 +206,21 @@ const processLogin = async (page, info) => {
       Object.assign(info, { phone: phone.phone, phoneId: phone.id });
       statusLogin = await loginWm(page, info);
     }
-    switch (statusLogin) {
-      case "NO_CODE_PHONE":
-      case "NO_CODE_MAIL":
-        await page.goBack({
-          timeout: TIMEOUT_REQUEST_PAGE,
-          waitUntil: ["load", "domcontentloaded"],
-        });
-        continue;
-      case "SERVER_ERROR":
-        break;
+
+    if (statusLogin === "NO_CODE_PHONE" || statusLogin === "NO_CODE_MAIL") {
+      logger.warn(`[Cảnh báo] ${statusLogin}. Quay lại trang để thử lại.`);
+      await page.goBack({
+        timeout: TIMEOUT_REQUEST_PAGE,
+        waitUntil: ["load", "domcontentloaded"],
+      });
+      continue;
+    }
+    if (statusLogin === "SERVER_ERROR") {
+      logger.error("[Lỗi] Server error, dừng thử lại.");
+      break;
     }
   }
-  console.log("🚀 ~ processLogin ~ statusLogin:", statusLogin);
+  logger.info(`[Kết quả] processLogin: ${statusLogin}`);
   return statusLogin;
 };
 

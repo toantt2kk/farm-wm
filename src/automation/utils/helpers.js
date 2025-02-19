@@ -11,8 +11,8 @@ const typeText = async (page, selector, text, timeout = 25, delay = 36) => {
   await element.focus();
   await page.keyboard.down("Control");
   await page.keyboard.press("A");
-  await page.keyboard.up("Control");
   await page.keyboard.press("Delete");
+  await page.keyboard.up("Control");
   await page.keyboard.type(text, { delay });
 };
 const enterKey = async (page, delay) => {
@@ -55,7 +55,6 @@ const clickByXPath = async (page, xpath, timeout = 0.1, delay = 10) => {
     await element.click({ timeout: timeout * 1000 });
     return true;
   } catch (error) {
-    console.error(`Error clicking element ${xpath}:`);
     return false;
   }
 };
