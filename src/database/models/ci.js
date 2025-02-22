@@ -14,7 +14,6 @@ export const upsertCIs = async (ciList) => {
       const newCI = ciRepository.create(cc);
       return newCI;
     });
-
     await ciRepository.upsert(clist, {
       conflictPaths: ["cc_number"],
       skipUpdateIfNoValuesChanged: true,

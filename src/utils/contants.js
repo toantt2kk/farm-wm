@@ -26,7 +26,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectPath = __dirname;
 
-const PATH_PROFILE = join(projectPath, "data", "profiles");
+const PATH_PROFILE = join(projectPath, "..", "..", "data", "profiles");
 if (!existsSync(PATH_PROFILE)) {
   mkdirSync(PATH_PROFILE, { recursive: true });
 }

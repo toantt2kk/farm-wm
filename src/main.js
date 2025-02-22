@@ -10,7 +10,7 @@ import { getDataToFile } from "./utils/file.js";
 import { formatCard } from "./utils/formater.js";
 import { logger } from "./utils/logger.js";
 import { calculateChromePositions } from "./utils/resolution.js";
-const CONCURRENCY = 2;
+const CONCURRENCY = 5;
 const PORTS = _.range(60000, 60101); // 60101 để bao gồm 60100
 // // Hàm chạy worker theo tuần tự
 // async function runWorkersSequentially(workerCount) {

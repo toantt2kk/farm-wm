@@ -14,7 +14,7 @@ const deleteProfile = (dir, profileId) => {
 const getDataToFile = async (file) => {
   try {
     const fileData = readFileSync(file, "utf-8");
-    const datas = _.split(fileData, "\n");
+    const datas = _.split(fileData.trim(), "\n");
     return datas;
   } catch (error) {
     console.error("Error fetching items:", error);
