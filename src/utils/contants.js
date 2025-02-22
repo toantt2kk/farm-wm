@@ -18,7 +18,13 @@ const FILE_TEST = "./data/test.txt";
 const FILE_ITEM_STOCK = "./data/item-stock.txt";
 const SUCCESS_FILE = "./data/success.txt";
 const URL_LOGIN_ACCOUNT = "https://www.walmart.com/account/login";
-const PROFILE_PATH = "D:\\profile_gologin";
+
+const projectPath = dirname(fileURLToPath(import.meta.url));
+
+const PATH_PROFILE = join(projectPath, "data", "profiles");
+if (!existsSync(PATH_PROFILE)) {
+  mkdirSync(PATH_PROFILE, { recursive: true });
+}
 export {
   DOMAIN_EMAIL,
   FILE_CI,
@@ -28,6 +34,7 @@ export {
   MAX_COUNT_ORDER,
   MAX_ITEM_ORDER,
   NAME_USER,
+  PATH_PROFILE,
   PROFILE_PATH,
   STATE,
   SUCCESS_FILE,

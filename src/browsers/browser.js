@@ -4,7 +4,7 @@ import { join } from "path";
 import puppeteer from "puppeteer-core";
 import { parentPort } from "worker_threads";
 import { closeResources } from "../automation/captcha.js";
-import { PROFILE_PATH, TOKEN_GOLOGIN } from "../utils/contants.js";
+import { PATH_PROFILE, TOKEN_GOLOGIN } from "../utils/contants.js";
 import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
 const MAX_RETRIES_CONNECT = 5;
@@ -15,6 +15,7 @@ const pathChrome = join(
   "orbita-browser-132",
   "chrome.exe"
 );
+
 const browserRunner = async (profileId, options) => {
   const { screenH, screenW, x, y, port, task_id } = options;
   let args = [
@@ -31,7 +32,7 @@ const browserRunner = async (profileId, options) => {
     profile_id: profileId,
     args,
     executablePath: pathChrome,
-    tmpdir: PROFILE_PATH,
+    tmpdir: PATH_PROFILE,
   });
 
   let page = null;

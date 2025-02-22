@@ -1,6 +1,7 @@
 import { TIMEOUT_REQUEST_PAGE } from "../../utils/contants.js";
 
 const typeText = async (page, selector, text, timeout = 25, delay = 36) => {
+  const isMac = process.platform === "darwin";
   const element = await page.waitForSelector(selector, {
     visible: true,
     timeout: timeout * 1000,
@@ -9,10 +10,15 @@ const typeText = async (page, selector, text, timeout = 25, delay = 36) => {
     throw new Error("Element not found");
   }
   await element.focus();
-  await page.keyboard.down("Control");
-  await page.keyboard.press("A");
-  await page.keyboard.press("Delete");
-  await page.keyboard.up("Control");
+  if (isMac) {
+    await element.click({ clickCount: 3 });
+    await element.type("");
+  } else {
+    await page.keyboard.down("Control");
+    await page.keyboard.press("A");
+    await page.keyboard.up("Control");
+    await page.keyboard.press("Delete");
+  }
   await page.keyboard.type(text, { delay });
 };
 const enterKey = async (page, delay) => {
