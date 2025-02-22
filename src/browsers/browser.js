@@ -4,7 +4,7 @@ import { join } from "path";
 import puppeteer from "puppeteer-core";
 import { parentPort } from "worker_threads";
 import { closeResources } from "../automation/captcha.js";
-import { PATH_PROFILE, TOKEN_GOLOGIN } from "../utils/contants.js";
+import { TOKEN_GOLOGIN } from "../utils/contants.js";
 import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
 const MAX_RETRIES_CONNECT = 5;
@@ -32,7 +32,7 @@ const browserRunner = async (profileId, options) => {
     profile_id: profileId,
     args,
     executablePath: pathChrome,
-    tmpdir: PATH_PROFILE,
+    tmpdir: "D:\\profile_gologin",
   });
 
   let page = null;

@@ -33,8 +33,8 @@ export const readRandomUnusedCI = async () => {
   try {
     const randomCI = await ciRepository
       .createQueryBuilder("ci")
-      .where("ci.status = :status", { status: "unused" }) // Chỉ lấy CI có status = "unused"
-      .orderBy("RANDOM()") // SQLite hỗ trợ RANDOM() để lấy một bản ghi ngẫu nhiên
+      .where("ci.status = :status", { status: "unused" })
+      .orderBy("RANDOM()")
       .limit(1)
       .getOne();
 

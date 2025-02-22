@@ -1,6 +1,5 @@
 import { readRandomUnusedCI, updateCi } from "../database/models/ci.js";
 import { upsertSuccesses } from "../database/models/success.js";
-import { TIMEOUT_REQUEST_PAGE } from "../utils/contants.js";
 import { getFirstChar } from "../utils/formater.js";
 import { delay, sleeptime } from "../utils/helpers.js";
 import { logger } from "../utils/logger.js";
@@ -107,6 +106,14 @@ const checkoutProcess = async (page, info, price) => {
             await acceptMoveOn(page);
             await updateCi(cardInfo.id, "error");
             continue;
+          } else {
+            await updateCi(cardInfo.id, "used");
+            await upsertSuccesses([
+              {
+                email: info.email,
+                price: price,
+              },
+            ]);
           }
           break;
         default:
@@ -117,49 +124,19 @@ const checkoutProcess = async (page, info, price) => {
       if (status === "NO_ADD" || status === "SUCCESS") break;
     }
 
-    if (status === "SUCCESS") {
-      logger.info("[Checkout] Đặt đơn thành công!");
-      await updateCi(cardInfo.id, "used");
-      await upsertSuccesses([
-        {
-          email: info.email,
-          price: price,
-        },
-      ]);
-      return true;
-    } else if (status === "NO_ADD") {
+    if (status === "NO_ADD") {
       logger.error("[Checkout] Không thêm được thẻ, đặt đơn thất bại.");
       return false;
     }
+    logger.info("[Checkout] Đặt đơn thành công!");
+    return true;
   } catch (error) {
     logger.error(`[Checkout] Lỗi trong quá trình đặt đơn: ${error.message}`);
   }
   return false;
 };
 
-const removeCard = async (page) => {
-  try {
-    logger.info("[Checkout] Xóa thẻ hiện tại.");
-    await clickElement(page, DOM_CHECKOUT.DELETE_CARD, 25);
-    const elements = await page.$$(
-      `::-p-xpath(//button[contains(text(), "Confirm")])`
-    );
-    if (elements.length === 0) {
-      logger.warn("[Checkout] Không tìm thấy nút xác nhận xóa thẻ.");
-      return false;
-    }
-    // Giả sử nút thứ 2 là nút Confirm
-    await elements[1].click();
-    await page.reload({
-      waitUntil: ["domcontentloaded"],
-      timeout: TIMEOUT_REQUEST_PAGE,
-    });
-    return true;
-  } catch (error) {
-    logger.error(`[Checkout] Lỗi khi xóa thẻ: ${error.message}`);
-    return false;
-  }
-};
+const removeCard = async (page) => {};
 
 const enterCardInfo = async (page, infoCard, parent) => {
   let ccNumber = DOM_CHECKOUT.CC_NUMBER;
