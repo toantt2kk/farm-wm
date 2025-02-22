@@ -92,7 +92,7 @@ export const listenForCaptcha = async (page, browser, GL, profileId) => {
 };
 
 // Hàm dọn dẹp tài nguyên trước khi thoát
-const closeResources = async (browser, GL, profileId) => {
+export const closeResources = async (browser, GL, profileId) => {
   try {
     if (browser) await browser.close();
     if (GL) {

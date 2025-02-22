@@ -1,4 +1,3 @@
-import { listenForCaptcha } from "./automation/captcha.js";
 import { checkoutProcess } from "./automation/checkout.js";
 import { processLogin } from "./automation/login-wm.js";
 import { subcriptionsItem } from "./automation/subcription-item.js";
@@ -14,9 +13,10 @@ export const start = async (options) => {
     os: "win",
     proxy: { mode: "socks5", host: "127.0.0.1", port },
   });
-  const { GL, browser, page } = await browserRunner(profileId, options);
-  await listenForCaptcha(page, browser, GL, profileId);
+  const { browser, page } = await browserRunner(profileId, options);
+
   if (!browser || !page) throw new Error("Không thể mở trình duyệt");
+
   try {
     const info = generateEmail(NAME_USER, USER_STATE, DOMAIN_EMAIL);
     const isLogin = await processLogin(page, info);
@@ -25,16 +25,9 @@ export const start = async (options) => {
     if (!status) throw new Error("Không thể đăng ký dịch vụ");
     await checkoutProcess(page, info, price);
     await browser.close();
-    await GL.stop();
-    await GL.delete(profileId);
     return;
   } catch (error) {
     logger.error(`❌ Lỗi chung: ${error.message}`);
-    console.log("🚀 ~ start ~ GL:", GL);
-    console.log("🚀 ~ start ~ browser:", browser);
     browser && (await browser.close());
-    GL && (await GL.stop());
-    GL && (await GL.delete(profileId));
-    throw new Error("Thất bại");
   }
 };

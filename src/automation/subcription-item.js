@@ -48,9 +48,8 @@ const subcriptionsItem = async (page) => {
   const itemIntockCount = await itemInStockCount();
   while (!orderSuccess && itemIntockCount) {
     const itemId = await randomItem();
-
+    price = 0;
     if (!itemId) break;
-
     logger.info(`Đang xử lý mặt hàng: ${itemId}`);
     try {
       if (!(await loadPage(page, itemId))) {
@@ -135,9 +134,11 @@ const initiateSubscription = async (page) => {
   try {
     await clickElement(page, DOM_SUBSCRIPTION.CLICK_SUB);
     await delay(2);
-    await clickElement(page, DOM_SUBSCRIPTION.SET_WEEK);
+    await clickElement(page, DOM_SUBSCRIPTION.SET_WEEK, 20);
     await delay(2);
-    await clickElement(page, DOM_SUBSCRIPTION.BUTTON_SUB_CART);
+    await page.mouse.move(250, 250);
+    await page.mouse.wheel({ deltaY: 320 });
+    await clickElement(page, DOM_SUBSCRIPTION.BUTTON_SUB_CART, 15);
 
     const check = await Promise.race([
       checkElementExits(page, DOM_SUBSCRIPTION.SET_UP_DIALOG, 10),

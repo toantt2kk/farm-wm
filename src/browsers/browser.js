@@ -2,9 +2,9 @@ import GoLogin from "gologin/src/gologin.js";
 import { homedir } from "os";
 import { join } from "path";
 import puppeteer from "puppeteer-core";
-import { checkProxy } from "../proxy/checker.js";
-import { getProxy } from "../proxy/get-proxy.js";
-import { TOKEN_GOLOGIN } from "../utils/contants.js";
+import { parentPort } from "worker_threads";
+import { closeResources } from "../automation/captcha.js";
+import { PROFILE_PATH, TOKEN_GOLOGIN } from "../utils/contants.js";
 import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
 const MAX_RETRIES_CONNECT = 5;
@@ -16,7 +16,7 @@ const pathChrome = join(
   "chrome.exe"
 );
 const browserRunner = async (profileId, options) => {
-  const { screenH, screenW, x, y, port } = options;
+  const { screenH, screenW, x, y, port, task_id } = options;
   let args = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
@@ -31,7 +31,7 @@ const browserRunner = async (profileId, options) => {
     profile_id: profileId,
     args,
     executablePath: pathChrome,
-    tmpdir: "D:\\profile_gologin",
+    tmpdir: PROFILE_PATH,
   });
 
   let page = null;
@@ -43,13 +43,13 @@ const browserRunner = async (profileId, options) => {
     retries++;
     try {
       // Lấy và kiểm tra proxy theo cổng đã cho
-      const proxy = await getProxy(port);
-      logger.info(`[Thông tin] Đang sử dụng cổng: ${port}`);
-      const isLiveProxy = await checkProxy(proxy);
-      if (!isLiveProxy) {
-        logger.info("[Cảnh báo] Proxy không hoạt động. Bỏ qua đăng nhập.");
-        return { browser: null, page: null, GL };
-      }
+      // const proxy = await getProxy(port);
+      // logger.info(`[Thông tin] Đang sử dụng cổng: ${port}`);
+      // const isLiveProxy = await checkProxy(proxy);
+      // if (!isLiveProxy) {
+      //   logger.info("[Cảnh báo] Proxy không hoạt động. Bỏ qua đăng nhập.");
+      //   return { browser: null, page: null, GL };
+      // }
 
       // Khởi chạy GoLogin để lấy wsUrl
       const { wsUrl } = await GL.start();
@@ -66,6 +66,14 @@ const browserRunner = async (profileId, options) => {
             defaultViewport: null,
           });
           puppeteerConnected = true;
+          browser.on("disconnected", async () => {
+            logger.warn("[Thông báo] Trình duyệt đã ngắt kết nối");
+            await closeResources(browser, GL, profileId);
+            parentPort.postMessage({
+              status: "disconnected",
+              task_id: task_id,
+            });
+          });
         } catch (error) {
           logger.error(
             `[Lỗi kết nối Puppeteer (thử ${connectRetries}/${MAX_RETRIES_CONNECT})] ${error}`

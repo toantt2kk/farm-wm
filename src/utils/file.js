@@ -3,10 +3,13 @@ import _ from "lodash";
 import { tmpdir } from "os";
 import { join } from "path";
 
-const deleteProfile = (profileId) => {
-  // Simulate deleting the profile by removing the corresponding directory from tmpdir
-  const profileDir = join(tmpdir(), `gologin_profile_${profileId}`);
-  return rmSync(profileDir, { recursive: true } || false);
+const deleteProfile = (dir, profileId) => {
+  if (!dir) {
+    dir = join(tmpdir(), `gologin_profile_${profileId}`);
+  } else {
+    dir = join(dir, `gologin_profile_${profileId}`);
+  }
+  return rmSync(dir, { recursive: true } || false);
 };
 const getDataToFile = async (file) => {
   try {
