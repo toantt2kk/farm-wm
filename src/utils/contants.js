@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 const STATE = "NewYork";
 const NAME_USER = "toan";
 const USER_STATE = "34";
@@ -19,7 +22,9 @@ const FILE_ITEM_STOCK = "./data/item-stock.txt";
 const SUCCESS_FILE = "./data/success.txt";
 const URL_LOGIN_ACCOUNT = "https://www.walmart.com/account/login";
 
-const projectPath = dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectPath = __dirname;
 
 const PATH_PROFILE = join(projectPath, "data", "profiles");
 if (!existsSync(PATH_PROFILE)) {
@@ -35,7 +40,6 @@ export {
   MAX_ITEM_ORDER,
   NAME_USER,
   PATH_PROFILE,
-  PROFILE_PATH,
   STATE,
   SUCCESS_FILE,
   TIMEOUT_REQUEST_PAGE,
