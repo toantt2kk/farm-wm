@@ -38,7 +38,14 @@ export const getToDayProxies = async (
   country_code = "US"
 ) => {
   try {
-    const url = `http://127.0.0.1:10101/api/today_list?t=2&limit=10&today`;
+    // const ports = await checkPorts9Proxy(port);
+    // const checkp = _.some(ports, (p) => {
+    //   p.port === port && p.online === true;
+    // });
+    // if (!checkp) {
+    //   throw new Error("No available proxy");
+    // }
+    const url = `http://127.0.0.1:10101/api/today_list?t=2&limit=300&today`;
     const apiClient = new HttpClient();
     const response = await apiClient.get(url);
     const datas = _.filter(
@@ -56,13 +63,9 @@ export const getToDayProxies = async (
   }
 };
 
-export const _9ProxyForward = async (
-  port,
-  state = "New York",
-  country_code = "US"
-) => {
+export const _9ProxyForward = async (port) => {
   try {
-    const url = `http://127.0.0.1:10101/api/proxy?num=1&country=${country_code}&state=${state}&city=${state}&port=${port}`;
+    const url = `http://127.0.0.1:10101/api/proxy?t=2&num=1&country=US&state=New%20York&isp=Charter%20Business%20Customers,Charter%20Communications,Charter%20Communications,%20INC,Charter%20Communications%20INC,Charter%20Communications%20LLC,T-Mobile%20USA%20Inc.,T-mobile%20Usa,%20Inc.&start_port=${port}`;
     const apiClient = new HttpClient();
     const response = await apiClient.get(url);
     return response.data;
@@ -71,6 +74,25 @@ export const _9ProxyForward = async (
   }
   return false;
 };
+// export const _9ProxyForward = async (
+//   port,
+//   state = "New York",
+//   country_code = "US"
+// ) => {
+//   try {
+//     const idSock = await getToDayProxies(state, country_code);
+//     if (!idSock) {
+//       throw new Error("No available proxy");
+//     }
+//     const url = `http://127.0.0.1:10101/api/forward?id=${idSock}&port=${port}&t=2`;
+//     const apiClient = new HttpClient();
+//     const response = await apiClient.get(url);
+//     return response.data;
+//   } catch (error) {
+//     console.log("🚀 ~ const_9ProxyForward= ~ error:", error);
+//   }
+//   return false;
+// };
 
 export const randomProxy = async (concurrency) => {
   try {
