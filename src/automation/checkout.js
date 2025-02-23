@@ -152,12 +152,17 @@ const removeCard = async (page) => {
     // Giả sử nút thứ 2 là nút Confirm
     await elements[1].click();
     await sleeptime(1, 3);
-    await clickByXPath(page, DOM_CHECKOUT.LEAVE, 25);
-    await sleeptime(1, 3);
     await page.reload({
       waitUntil: ["domcontentloaded"],
       timeout: TIMEOUT_REQUEST_PAGE,
     });
+    if (await clickByXPath(page, DOM_CHECKOUT.LEAVE, 0, 5)) {
+      await page.reload({
+        waitUntil: ["domcontentloaded"],
+        timeout: TIMEOUT_REQUEST_PAGE,
+      });
+      await sleeptime(1, 3);
+    }
     return true;
   } catch (error) {
     logger.error(`[Checkout] Lỗi khi xóa thẻ: ${error.message}`);
