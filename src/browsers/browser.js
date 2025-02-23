@@ -1,4 +1,5 @@
 import GoLogin from "gologin/src/gologin.js";
+import _ from "lodash";
 import { homedir } from "os";
 import { join } from "path";
 import puppeteer from "puppeteer-core";
@@ -27,7 +28,9 @@ const browserRunner = async (profileId, options) => {
     "--high-dpi-support=1",
     `--force-device-scale-factor=${scale}`,
   ];
-
+  if (process.platform("darwin")) {
+    _.remove(args, (v) => v.includes("--force-device-scale-factor"));
+  }
   const GL = new GoLogin({
     token: TOKEN_GOLOGIN,
     profile_id: profileId,
