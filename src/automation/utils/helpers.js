@@ -59,7 +59,7 @@ const clickByXPath = async (page, xpath, timeout = 0.1, delay = 10) => {
       timeout: delay * 1000,
     });
     if (!element) throw new Error(`Element not found: ${xpath}`);
-    await element.click({ timeout: timeout * 1000 });
+    await element.click();
     return true;
   } catch (error) {
     return false;

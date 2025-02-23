@@ -56,6 +56,7 @@ export const updateTask = async (id, { port }) => {
 };
 
 export const updateTaskStatus = async (taskId) => {
+  console.log("🚀 ~ updateTaskStatus ~ taskId:", taskId);
   const taskRepository = AppDataSource.getRepository(Task);
   try {
     const task = await taskRepository.findOneBy({

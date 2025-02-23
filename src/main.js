@@ -10,8 +10,8 @@ import { getDataToFile } from "./utils/file.js";
 import { formatCard } from "./utils/formater.js";
 import { logger } from "./utils/logger.js";
 import { calculateRowsCols, setChromeWindows } from "./utils/resolution.js";
-const CONCURRENCY = 10;
-const SCALE = 0.25;
+const CONCURRENCY = 5;
+const SCALE = 0.3;
 const PORTS = _.range(60000, 60101); // 60101 để bao gồm 60100
 
 async function main() {

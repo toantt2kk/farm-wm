@@ -151,12 +151,25 @@ const removeCard = async (page) => {
     // Giả sử nút thứ 2 là nút Confirm
     await elements[1].click();
     if (await clickElement(page, 'button[aria-label="close wallet panel"]')) {
-      if (await clickByXPath(page, DOM_CHECKOUT.LEAVE, 0, 5)) {
-        await page.reload({
-          waitUntil: ["domcontentloaded"],
-          timeout: TIMEOUT_REQUEST_PAGE,
-        });
-      }
+      await delay(1);
+      await page.evaluate(() => {
+        const button = document.evaluate(
+          '//button[contains(text(), "Leave")]',
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        if (button) {
+          button.click();
+        }
+      });
+      await delay(2);
+      await page.reload({
+        waitUntil: ["domcontentloaded"],
+        timeout: TIMEOUT_REQUEST_PAGE,
+      });
     }
 
     return true;
@@ -252,7 +265,7 @@ const enterFormAddress = async (page, info) => {
   await delay(1);
   await enterKey(page);
   await delay(2);
-  await clickByXPath(page, DOM_CHECKOUT.BUTTON_NO_SAVE, 15);
+  await clickByXPath(page, DOM_CHECKOUT.BUTTON_NO_SAVE, 0, 15);
 };
 
 const acceptMoveOn = async (page) => {

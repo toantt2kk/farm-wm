@@ -153,7 +153,7 @@ const initiateSubscription = async (page) => {
 
 const removeItemFromCart = async (page) => {
   try {
-    await clickByXPath(page, DOM_SUBSCRIPTION.BUTTON_REMOVE, 10);
+    await clickByXPath(page, DOM_SUBSCRIPTION.BUTTON_REMOVE, 0, 10);
     await delay(2);
     logger.info("Đã loại bỏ sản phẩm khỏi giỏ hàng.");
   } catch (error) {
@@ -165,7 +165,7 @@ const adjustItemQuantity = async (page, totalCount) => {
   const count = Math.min(totalCount, MAX_ITEM_ORDER);
   logger.info(`Điều chỉnh số lượng đến ${count}`);
   for (let i = 1; i < count; i++) {
-    await clickByXPath(page, DOM_SUBSCRIPTION.QUANTITY_INCREASE, 10);
+    await clickByXPath(page, DOM_SUBSCRIPTION.QUANTITY_INCREASE, 0, 10);
   }
 };
 

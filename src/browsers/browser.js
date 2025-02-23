@@ -93,7 +93,7 @@ const browserRunner = async (profileId, options) => {
         `[Lỗi trong quá trình khởi tạo trình duyệt (thử ${retries}/${MAX_RETRIES})] ${error}`
       );
       if (
-        error.message.includes("Proxy Error.") ||
+        error.message.includes("Client network socket disconnected") ||
         error.message.includes("Proxy connection timed out") ||
         error.message.includes("socket hang up")
       ) {
@@ -103,6 +103,9 @@ const browserRunner = async (profileId, options) => {
     }
   }
   if (isConnectedProxy) {
+    logger.error(
+      `[Lỗi] Kết nối proxy thất bại hoặc đã hết hạn. task id ${task_id}`
+    );
     await _9ProxyForward(port);
     if (GL) {
       await GL.stop();

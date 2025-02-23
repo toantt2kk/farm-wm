@@ -170,7 +170,7 @@ const loginWmNoPhone = async (page, info) => {
     ]);
     if (checked.selector === SELECTORS.sendCode) {
       logger.info("[Thông tin] Gửi lại mã OTP qua email");
-      await clickByXPath(page, SELECTORS.sendCode, 25);
+      await clickByXPath(page, SELECTORS.sendCode, 0, 25);
       const newCodeEmail = await waitingCode(60, () =>
         getCodeFromEmail(info.email)
       );

@@ -4,7 +4,6 @@ import { processLogin } from "./automation/login-wm.js";
 import { subcriptionsItem } from "./automation/subcription-item.js";
 import { browserRunner } from "./browsers/browser.js";
 import { createProfile } from "./browsers/profile.js";
-import { updateTaskStatus } from "./database/models/task.js";
 import { DOMAIN_EMAIL, NAME_USER, USER_STATE } from "./utils/contants.js";
 import { logger } from "./utils/logger.js";
 import { generateEmail } from "./utils/random-data.js";
@@ -18,7 +17,7 @@ export const start = async (options) => {
   });
   const { browser, page } = await browserRunner(profileId, options);
   if (!browser || !page) {
-    await updateTaskStatus(options.task_id);
+    // await updateTaskStatus(options.task_id);
     parentPort.postMessage({ status: "restart", task_id: options.task_id });
     return "restart";
   }
@@ -27,15 +26,21 @@ export const start = async (options) => {
     const info = generateEmail(NAME_USER, USER_STATE, DOMAIN_EMAIL);
     const isLogin = await processLogin(page, info);
     if (isLogin === "SERVER_ERROR") {
+      await _9ProxyForward(port);
       await browser.close();
+      parentPort.postMessage({ status: "restart", task_id: options.task_id });
       return "server_error";
     }
     const { status, price } = await subcriptionsItem(page);
     if (!status) throw new Error("Không thể đăng ký dịch vụ");
     await checkoutProcess(page, info, price);
     await browser.close();
+    // await updateTaskStatus(options.task_id);
   } catch (error) {
     logger.error(`❌ Lỗi chung: ${error.message}`);
+    if (error.message.includes("net::ERR_TIMED_OUT")) {
+      await _9ProxyForward(port);
+    }
     browser && (await browser.close());
   }
   return "closed";
