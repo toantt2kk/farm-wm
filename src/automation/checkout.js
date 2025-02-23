@@ -166,10 +166,14 @@ const removeCard = async (page) => {
         }
       });
       await delay(2);
-      await page.reload({
-        waitUntil: ["domcontentloaded"],
-        timeout: TIMEOUT_REQUEST_PAGE,
-      });
+      let count = 2;
+      while (count > 0) {
+        await page.reload({
+          waitUntil: ["domcontentloaded"],
+          timeout: TIMEOUT_REQUEST_PAGE,
+        });
+        count--;
+      }
     }
 
     return true;

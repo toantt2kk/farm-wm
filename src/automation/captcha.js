@@ -1,6 +1,4 @@
 import { _9ProxyForward } from "../proxy/9proxy.js";
-import { PROFILE_ROOT } from "../utils/contants.js";
-import { deleteProfile } from "../utils/file.js";
 import { logger } from "../utils/logger.js";
 import { clickElement } from "./utils/helpers.js";
 
@@ -103,7 +101,6 @@ export const closeResources = async (browser, GL, profileId) => {
     if (GL) {
       await GL.stop();
       if (profileId) await GL.delete(profileId);
-      deleteProfile(PROFILE_ROOT, profileId);
     }
     // await updateTaskStatus(task.task_id);
   } catch (err) {

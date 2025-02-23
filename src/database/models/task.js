@@ -111,7 +111,7 @@ export const readTask = async (workerId) => {
   const taskRepository = AppDataSource.getRepository(Task);
   try {
     const task = await taskRepository.findOne({
-      where: { status: "available", task_id: workerId },
+      where: { id: workerId },
       order: {
         task_id: "ASC",
       },
@@ -174,4 +174,14 @@ export const checkTaskAvaliable = async (taskId) => {
     console.error("Error in checkTasksAvaliable:", error);
   }
   return false;
+};
+
+export const readAllTask = async () => {
+  try {
+    const repo = AppDataSource.getRepository(Task);
+    return (await repo.find({ order: { task_id: "ASC" } })) || [];
+  } catch (error) {
+    console.log("🚀 ~ readAllTask ~ error:", error);
+  }
+  return [];
 };

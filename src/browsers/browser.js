@@ -64,7 +64,7 @@ const browserRunner = async (profileId, options) => {
           });
           puppeteerConnected = true;
           browser.on("disconnected", async () => {
-            logger.warn("[Thông báo] Trình duyệt đã ngắt kết nối");
+            logger.warn(`[Thông báo] Trình duyệt ${task_id} đã ngắt kết nối`);
             await closeResources(browser, GL, profileId, port);
             parentPort.postMessage({
               status: "disconnected",
