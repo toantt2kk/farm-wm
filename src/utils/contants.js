@@ -1,13 +1,25 @@
 import { existsSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectPath = __dirname;
+
+const PATH_PROFILE = join(projectPath, "..", "..", "data", "profiles");
+const PATH_ROOT = join(projectPath, "..", "..", "data");
+if (!existsSync(PATH_PROFILE)) {
+  mkdirSync(PATH_PROFILE, { recursive: true });
+}
+if (!existsSync(PATH_ROOT)) {
+  mkdirSync(PATH_ROOT, { recursive: true });
+}
 const STATE = "NewYork";
 const NAME_USER = "toan";
 const USER_STATE = "34";
 const DOMAIN_EMAIL = "goku68";
 const TOKEN_PHONE = "VjAJ43VS5Lk9pWXx5JzWWYQ5JxRREc";
 const TOKEN_GOLOGIN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2JhYTM1ODJkYjc4NDdhMTE3NmUwZmUiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2N2JhYTM2NWUwZmE0MjhjNGE4MzJiZmUifQ.wzay39GO9auXwt0yZ_ORaoVPgjrp3qKMF7MRiZYpRow";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2JiNjdiYjIxYWE4NzMyM2MwNWMzYzMiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2N2JiNjdjNDJmNGRkNzUwMzljY2Q5MjMifQ.8oPnVgRBPBreK089uPB-Olh8PDkCv2TnZPaRZXkQmuI";
 const URL_API_PHONE = `https://daisysms.com/stubs/handler_api.php?api_key=${TOKEN_PHONE}`;
 const TIMEOUT_REQUEST_PAGE = 60 * 1000;
 const URL_LOGIN_WM = "https://www.walmart.com/account/profile";
@@ -22,14 +34,7 @@ const FILE_ITEM_STOCK = "./data/item-stock.txt";
 const SUCCESS_FILE = "./data/success.txt";
 const URL_LOGIN_ACCOUNT = "https://www.walmart.com/account/login";
 const PROFILE_ROOT = "D:\\profile_gologin";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectPath = __dirname;
 
-const PATH_PROFILE = join(projectPath, "..", "..", "data", "profiles");
-if (!existsSync(PATH_PROFILE)) {
-  mkdirSync(PATH_PROFILE, { recursive: true });
-}
 export {
   DOMAIN_EMAIL,
   FILE_CI,
