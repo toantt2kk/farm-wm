@@ -1,13 +1,21 @@
 import { Worker } from "worker_threads";
 import { counterCiUnused } from "./database/models/ci.js";
-import { getTaskByPosition } from "./database/models/task.js";
+import { itemInStockCount } from "./database/models/item.js";
+import { readTask, updateTaskStatus } from "./database/models/task.js";
 import { logger } from "./utils/logger.js";
 
 const workers = new Map();
 
 async function startTask(task) {
   const counterCi = await counterCiUnused();
-  if ((workers.has(task.task_id) && counterCi === 0) || !counterCi) {
+  const counterItemInStock = await itemInStockCount();
+  if (
+    (workers.has(task.task_id) &&
+      counterCi === 0 &&
+      counterItemInStock === 0) ||
+    !counterCi ||
+    !counterItemInStock
+  ) {
     logger.warn(
       `[Cảnh báo] Worker có task id  ${task.task_id} đã bắt đầu hoặc đã tồn tại.`
     );
@@ -24,6 +32,8 @@ async function startTask(task) {
         `[Thông báo] Worker có task id  ${message.task_id} đã đóng hoặc thoát.`
       );
       workers.delete(task.task_id);
+      worker.terminate();
+      await updateTaskStatus(task.task_id);
       await restartTask(message.task_id);
     }
   });
@@ -36,7 +46,15 @@ async function startTask(task) {
     worker.terminate();
   });
 
-  worker.on("exit", () => {
+  worker.on("exit", async (code) => {
+    if (code === 1) {
+      logger.info(`[Thông báo] worker có id ${task.id} thoát. Đang restart...`);
+      workers.delete(task.task_id);
+      worker.terminate();
+      await updateTaskStatus(task.task_id);
+      await restartTask(task.task_id);
+      return;
+    }
     logger.warn(`[Cảnh báo] Worker có task id  ${task.task_id} đã thoát!`);
     workers.delete(task.task_id);
     worker.terminate();
@@ -46,7 +64,7 @@ async function startTask(task) {
 }
 
 async function restartTask(task_id) {
-  const task = await getTaskByPosition(task_id);
+  const task = await readTask(task_id);
 
   if (task) {
     await startTask(task);

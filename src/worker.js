@@ -17,6 +17,7 @@ import { logger } from "./utils/logger.js";
       screenW: task.resolution.width,
       screenH: task.resolution.height,
       task_id: task.task_id,
+      scale: task.scale,
     });
     logger.info(`✅ Worker hoàn thành.`);
   } catch (error) {

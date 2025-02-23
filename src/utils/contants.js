@@ -7,7 +7,7 @@ const USER_STATE = "34";
 const DOMAIN_EMAIL = "goku68";
 const TOKEN_PHONE = "VjAJ43VS5Lk9pWXx5JzWWYQ5JxRREc";
 const TOKEN_GOLOGIN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2IxM2I4MTdlZWEzMjcwNWJmOWY5NDMiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2N2IxM2I5NTA3MGJlNzUzNjM4NDY1MGUifQ.m-LuPVoOUfn9DMpCFEWB37RSsVHdVs7UHXHK5mDOnFM";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2N2JhYTM1ODJkYjc4NDdhMTE3NmUwZmUiLCJ0eXBlIjoiZGV2Iiwiand0aWQiOiI2N2JhYTM2NWUwZmE0MjhjNGE4MzJiZmUifQ.wzay39GO9auXwt0yZ_ORaoVPgjrp3qKMF7MRiZYpRow";
 const URL_API_PHONE = `https://daisysms.com/stubs/handler_api.php?api_key=${TOKEN_PHONE}`;
 const TIMEOUT_REQUEST_PAGE = 60 * 1000;
 const URL_LOGIN_WM = "https://www.walmart.com/account/profile";

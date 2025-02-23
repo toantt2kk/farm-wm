@@ -33,6 +33,45 @@ export const checkPorts9Proxy = async (ports) => {
   }
 };
 
+export const getToDayProxies = async (
+  state = "New York",
+  country_code = "US"
+) => {
+  try {
+    const url = `http://127.0.0.1:10101/api/today_list?t=2&limit=10&today`;
+    const apiClient = new HttpClient();
+    const response = await apiClient.get(url);
+    const datas = _.filter(
+      response.data,
+      (proxy) =>
+        proxy.country_code === country_code &&
+        proxy.city === state &&
+        binding === null
+    );
+    const pickProxyId = _.sample(datas)?.id;
+    return pickProxyId ?? null;
+  } catch (error) {
+    console.error("Error fetching proxy:", error);
+    return null;
+  }
+};
+
+export const _9ProxyForward = async (
+  port,
+  state = "New York",
+  country_code = "US"
+) => {
+  try {
+    const url = `http://127.0.0.1:10101/api/proxy?num=1&country=${country_code}&state=${state}&city=${state}&port=${port}`;
+    const apiClient = new HttpClient();
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.log("🚀 ~ const_9ProxyForward= ~ error:", error);
+  }
+  return false;
+};
+
 export const randomProxy = async (concurrency) => {
   try {
     const ports = await getPorts(concurrency);

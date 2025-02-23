@@ -14,10 +14,15 @@ export const upsertCIs = async (ciList) => {
       const newCI = ciRepository.create(cc);
       return newCI;
     });
-    await ciRepository.upsert(clist, {
-      conflictPaths: ["cc_number"],
-      skipUpdateIfNoValuesChanged: true,
-    });
+    const packData = _.chunk(clist, 500);
+    await Promise.all(
+      _.map(packData, async (chunks) => {
+        await ciRepository.upsert(chunks, {
+          conflictPaths: ["cc_number"],
+          skipUpdateIfNoValuesChanged: true,
+        });
+      })
+    );
 
     console.log(`Upserted ${ciList.length} CI records.`);
     return true;

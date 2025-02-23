@@ -45,6 +45,7 @@ const DOM_CHECKOUT = {
   ERROR_CARD_AUTH: 'div[aria-label="Error"]',
   SUBMIT_PAYMENT: '[form="single-form-add-payment"]',
   CONTINUE: '//button[contains(text(), "Continue")]',
+  LEAVE: '//button[contains(text(), "Continue")]',
   NO_ADD_PAYMENT:
     "//*[contains(text(), 'Your card could not be saved. Please use a different payment method')]",
   BUTTON_ORDER_PLACE: 'button[data-automation-id="place-order-button"]',
@@ -103,6 +104,7 @@ const checkoutProcess = async (page, info, price) => {
             logger.warn("[Checkout] Lỗi xác thực thẻ, giới hạn tiền.");
             status = "LIMIT_MONEY";
             await removeCard(page);
+            await delay(999);
             await acceptMoveOn(page);
             await updateCi(cardInfo.id, "error");
             continue;
@@ -136,7 +138,32 @@ const checkoutProcess = async (page, info, price) => {
   return false;
 };
 
-const removeCard = async (page) => {};
+const removeCard = async (page) => {
+  try {
+    logger.info("[Checkout] Xóa thẻ hiện tại.");
+    await clickElement(page, DOM_CHECKOUT.DELETE_CARD, 25);
+    const elements = await page.$$(
+      `::-p-xpath(//button[contains(text(), "Confirm")])`
+    );
+    if (elements.length === 0) {
+      logger.warn("[Checkout] Không tìm thấy nút xác nhận xóa thẻ.");
+      return false;
+    }
+    // Giả sử nút thứ 2 là nút Confirm
+    await elements[1].click();
+    await sleeptime(1, 3);
+    await clickByXPath(page, DOM_CHECKOUT.LEAVE, 25);
+    await sleeptime(1, 3);
+    await page.reload({
+      waitUntil: ["domcontentloaded"],
+      timeout: TIMEOUT_REQUEST_PAGE,
+    });
+    return true;
+  } catch (error) {
+    logger.error(`[Checkout] Lỗi khi xóa thẻ: ${error.message}`);
+    return false;
+  }
+};
 
 const enterCardInfo = async (page, infoCard, parent) => {
   let ccNumber = DOM_CHECKOUT.CC_NUMBER;

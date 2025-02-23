@@ -9,72 +9,10 @@ import { FILE_CI, FILE_ITEM } from "./utils/contants.js";
 import { getDataToFile } from "./utils/file.js";
 import { formatCard } from "./utils/formater.js";
 import { logger } from "./utils/logger.js";
-import { calculateChromePositions } from "./utils/resolution.js";
-const CONCURRENCY = 5;
+import { calculateRowsCols, setChromeWindows } from "./utils/resolution.js";
+const CONCURRENCY = 7;
+const SCALE = 0.25;
 const PORTS = _.range(60000, 60101); // 60101 để bao gồm 60100
-// // Hàm chạy worker theo tuần tự
-// async function runWorkersSequentially(workerCount) {
-//   for (let workerId = 0; workerId < workerCount; workerId++) {
-//     createWorker(workerId + 1);
-//     await sleeptime(2, 5);
-//   }
-// }
-
-// async function createWorker(taskID) {
-//   console.log("🚀 ~ createWorker ~ taskID:", taskID);
-//   return new Promise((resolve) => {
-//     async function startWorker() {
-//       const countUnused = await counterCiUnused();
-//       if (countUnused === 0) {
-//         logger.error(
-//           `🚫 Worker ${taskID} đã vượt quá số lần restart (${countUnused}). Dừng lại.`
-//         );
-//         return resolve();
-//       }
-//       while (!(await checkTaskAvaliable(taskID))) {
-//         logger.info(`[Task ${taskID}] Chờ được giải phóng...`);
-//         await new Promise((res) => setTimeout(res, _.random(300, 1000)));
-//       }
-//       const task = await readTask(taskID);
-//       const worker = new Worker("./src/worker.js", {
-//         workerData: { task },
-//       });
-//       async function handleWorkerExit(reason, workerId) {
-//         logger.info(
-//           `🔄 Worker ${workerId} sẽ khởi động lại sau ${
-//             RESTART_DELAY_MS / 1000
-//           }s...`
-//         );
-//         await new Promise((res) => setTimeout(res, RESTART_DELAY_MS));
-//         await updateTaskStatus(workerId);
-//         await startWorker();
-//       }
-//       worker.on("message", async (message) => {
-//         if (message.success) {
-//           logger.info(`✅ Worker ${message.workerId} hoàn thành.`);
-//           await handleWorkerExit("completed", message.workerId);
-//         } else {
-//           logger.error(`❌ Worker ${message.workerId} lỗi: ${message.error}`);
-//           await handleWorkerExit("message error", message.workerId);
-//         }
-//       });
-
-//       worker.on("error", async (error) => {
-//         logger.error(`❌ Worker ${taskID} gặp lỗi: ${error.message}`);
-//         await handleWorkerExit("runtime error", taskID);
-//       });
-
-//       worker.on("exit", async (code) => {
-//         logger.error(`❌ Worker ${taskID} đã thoát với mã: ${code}`);
-//         await handleWorkerExit("process exit", taskID);
-//       });
-
-//       return worker;
-//     }
-
-//     startWorker();
-//   });
-// }
 
 async function main() {
   try {
@@ -107,16 +45,17 @@ async function main() {
     }
 
     const { height, width } = getScreenSize();
-    const positions = calculateChromePositions(width, height, CONCURRENCY);
-    // const ports = await randomProxy(CONCURRENCY);
+    const { cols, rows } = calculateRowsCols(width, height, SCALE);
+    const chromePositions = setChromeWindows(rows, cols, width, height, SCALE);
     const tasks = _.map(Array(CONCURRENCY), (_, index) => ({
       port: PORTS[index],
       task_id: index + 1,
-      position: { x: positions[index].x, y: positions[index].y },
+      position: { x: chromePositions[index].x, y: chromePositions[index].y },
       resolution: {
-        width: positions[index].width,
-        height: positions[index].height,
+        width: chromePositions[index].width,
+        height: chromePositions[index].height,
       },
+      scale: SCALE,
     }));
 
     const isUpTasks = await upsertTask(tasks);

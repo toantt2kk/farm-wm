@@ -90,9 +90,8 @@ const subcriptionsItem = async (page) => {
 
       logger.info(`[${itemId}] Giá: ${priceItem}. Điều chỉnh số lượng...`);
       const totalCount = calculateAdditions(priceItem, MAX_COUNT_ORDER);
-      price = priceItem * totalCount;
       await adjustItemQuantity(page, totalCount);
-
+      price = await getPrice(page);
       await Promise.all([
         clickElement(page, DOM_SUBSCRIPTION.BUTTON_CHECKOUT, 15, 0.8),
         waitForPageLoad(page),

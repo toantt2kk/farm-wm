@@ -21,7 +21,7 @@ export const randomItem = async () => {
     const randomItem = await itemRepository
       .createQueryBuilder("item")
       .where("item.status = :status", { status: "in_stock" })
-      .orderBy("RANDOM()") // SQLite hỗ trợ RANDOM()
+      .orderBy("RANDOM()")
       .limit(1)
       .getOne();
 

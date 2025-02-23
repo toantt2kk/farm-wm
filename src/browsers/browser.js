@@ -3,7 +3,8 @@ import { homedir } from "os";
 import { join } from "path";
 import puppeteer from "puppeteer-core";
 import { parentPort } from "worker_threads";
-import { closeResources } from "../automation/captcha.js";
+import { closeResources, listenForCaptcha } from "../automation/captcha.js";
+import { _9ProxyForward } from "../proxy/9proxy.js";
 import { TOKEN_GOLOGIN } from "../utils/contants.js";
 import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
@@ -17,14 +18,14 @@ const pathChrome = join(
 );
 
 const browserRunner = async (profileId, options) => {
-  const { screenH, screenW, x, y, port, task_id } = options;
+  const { screenH, screenW, x, y, port, task_id, scale } = options;
   let args = [
     "--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-blink-features=AutomationControlled",
-    `--window-size=${screenW},${screenH}`,
     `--window-position=${x},${y}`,
     "--high-dpi-support=1",
+    `--force-device-scale-factor=${scale}`,
   ];
 
   const GL = new GoLogin({
@@ -39,19 +40,10 @@ const browserRunner = async (profileId, options) => {
   let browser = null;
   let retries = 0;
   let connected = false;
-
+  let isConnectedProxy = false;
   while (retries < MAX_RETRIES && !connected) {
     retries++;
     try {
-      // Lấy và kiểm tra proxy theo cổng đã cho
-      // const proxy = await getProxy(port);
-      // logger.info(`[Thông tin] Đang sử dụng cổng: ${port}`);
-      // const isLiveProxy = await checkProxy(proxy);
-      // if (!isLiveProxy) {
-      //   logger.info("[Cảnh báo] Proxy không hoạt động. Bỏ qua đăng nhập.");
-      //   return { browser: null, page: null, GL };
-      // }
-
       // Khởi chạy GoLogin để lấy wsUrl
       const { wsUrl } = await GL.start();
       let connectRetries = 0;
@@ -69,7 +61,7 @@ const browserRunner = async (profileId, options) => {
           puppeteerConnected = true;
           browser.on("disconnected", async () => {
             logger.warn("[Thông báo] Trình duyệt đã ngắt kết nối");
-            await closeResources(browser, GL, profileId);
+            await closeResources(browser, GL, profileId, port);
             parentPort.postMessage({
               status: "disconnected",
               task_id: task_id,
@@ -90,14 +82,26 @@ const browserRunner = async (profileId, options) => {
       const pages = await browser.pages();
       if (pages.length > 1) await pages[1].close();
       page = pages[0];
+      await listenForCaptcha(page, browser, GL, profileId, port);
       connected = true;
     } catch (error) {
       logger.error(
         `[Lỗi trong quá trình khởi tạo trình duyệt (thử ${retries}/${MAX_RETRIES})] ${error}`
       );
+      if (
+        error.includes("Proxy Error.") ||
+        error.includes("Proxy connection timed out")
+      ) {
+        isConnectedProxy = true;
+        break;
+      }
     }
   }
-
+  if (isConnectedProxy) {
+    await _9ProxyForward(port);
+    browser && (await browser.close());
+    return { browser, page, GL };
+  }
   if (!connected) {
     logger.error("[Lỗi] Không thể khởi tạo trình duyệt sau nhiều lần thử.");
   }

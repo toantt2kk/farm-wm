@@ -12,6 +12,9 @@ export default new EntitySchema({
     port: {
       type: "int",
     },
+    scale: {
+      type: "int",
+    },
     task_id: {
       type: "int",
       unique: true,

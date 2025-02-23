@@ -1,3 +1,4 @@
+import { _9ProxyForward } from "../proxy/9proxy.js";
 import { logger } from "../utils/logger.js";
 import { clickElement } from "./utils/helpers.js";
 
@@ -80,13 +81,15 @@ const handleHumanChallenge = async (page, mouse) => {
     }
   }
 };
-export const listenForCaptcha = async (page, browser, GL, profileId) => {
+export const listenForCaptcha = async (page, browser, GL, profileId, port) => {
   page.on("request", async (request) => {
     const url = request.url();
     if (url.includes("captcha/captcha.js?")) {
       logger.warn("[⚠️ CẢNH BÁO] Phát hiện CAPTCHA! Dừng ngay tiến trình.");
-      await closeResources(browser, GL, profileId);
-      process.exit(1);
+      // await closeResources(browser, GL, profileId, port);
+      await browser.close();
+      await _9ProxyForward(port);
+      // process.exit(1);
     }
   });
 };

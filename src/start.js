@@ -12,15 +12,20 @@ export const start = async (options) => {
   const profileId = await createProfile({
     os: "win",
     proxy: { mode: "socks5", host: "127.0.0.1", port },
+    // proxy: { mode: "none" },
   });
   const { browser, page } = await browserRunner(profileId, options);
-
-  if (!browser || !page) throw new Error("Không thể mở trình duyệt");
+  if (!browser || !page) {
+    return;
+  }
 
   try {
     const info = generateEmail(NAME_USER, USER_STATE, DOMAIN_EMAIL);
     const isLogin = await processLogin(page, info);
-    if (isLogin === "SERVER_ERROR") throw new Error("Lỗi đăng nhập");
+    if (isLogin === "SERVER_ERROR") {
+      await browser.close();
+      return;
+    }
     const { status, price } = await subcriptionsItem(page);
     if (!status) throw new Error("Không thể đăng ký dịch vụ");
     await checkoutProcess(page, info, price);

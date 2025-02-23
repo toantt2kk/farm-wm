@@ -16,6 +16,7 @@ const typeText = async (page, selector, text, timeout = 25, delay = 36) => {
   } else {
     await page.keyboard.down("Control");
     await page.keyboard.press("A");
+    await page.keyboard.type("");
     await page.keyboard.up("Control");
     await page.keyboard.press("Delete");
   }
