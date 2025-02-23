@@ -1,7 +1,7 @@
 import { Worker } from "worker_threads";
 import { counterCiUnused } from "./database/models/ci.js";
 import { itemInStockCount } from "./database/models/item.js";
-import { readTask, updateTaskStatus } from "./database/models/task.js";
+import { readTask } from "./database/models/task.js";
 import { logger } from "./utils/logger.js";
 
 const workers = new Map();
@@ -27,13 +27,16 @@ async function startTask(task) {
   });
 
   worker.on("message", async (message) => {
-    if (message.status === "closed" || message.status === "disconnected") {
+    if (
+      message.status === "closed" ||
+      message.status === "disconnected" ||
+      message.status === "restart"
+    ) {
       logger.info(
         `[Thông báo] Worker có task id  ${message.task_id} đã đóng hoặc thoát.`
       );
       workers.delete(task.task_id);
       worker.terminate();
-      await updateTaskStatus(task.task_id);
       await restartTask(message.task_id);
     }
   });
@@ -51,7 +54,7 @@ async function startTask(task) {
       logger.info(`[Thông báo] worker có id ${task.id} thoát. Đang restart...`);
       workers.delete(task.task_id);
       worker.terminate();
-      await updateTaskStatus(task.task_id);
+      // await updateTaskStatus(task.task_id);
       await restartTask(task.task_id);
       return;
     }

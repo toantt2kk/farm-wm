@@ -5,7 +5,7 @@ import puppeteer from "puppeteer-core";
 import { parentPort } from "worker_threads";
 import { closeResources, listenForCaptcha } from "../automation/captcha.js";
 import { _9ProxyForward } from "../proxy/9proxy.js";
-import { TOKEN_GOLOGIN } from "../utils/contants.js";
+import { PROFILE_ROOT, TOKEN_GOLOGIN } from "../utils/contants.js";
 import { logger } from "../utils/logger.js";
 const MAX_RETRIES = 5;
 const MAX_RETRIES_CONNECT = 5;
@@ -33,7 +33,7 @@ const browserRunner = async (profileId, options) => {
     profile_id: profileId,
     args,
     executablePath: pathChrome,
-    tmpdir: "D:\\profile_gologin",
+    tmpdir: PROFILE_ROOT,
   });
 
   let page = null;
@@ -100,8 +100,11 @@ const browserRunner = async (profileId, options) => {
   }
   if (isConnectedProxy) {
     await _9ProxyForward(port);
-    browser && (await browser.close());
-    return { browser, page, GL };
+    if (GL) {
+      await GL.stop();
+      await GL.delete(profileId);
+    }
+    return { browser: null, page: null, GL: null };
   }
   if (!connected) {
     logger.error("[Lỗi] Không thể khởi tạo trình duyệt sau nhiều lần thử.");

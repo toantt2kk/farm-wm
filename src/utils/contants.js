@@ -13,7 +13,7 @@ const TIMEOUT_REQUEST_PAGE = 60 * 1000;
 const URL_LOGIN_WM = "https://www.walmart.com/account/profile";
 const URL_REG_NO_PHONE = "https://advertising.walmart.com";
 const URL_WM = "https://www.walmart.com/";
-const MAX_COUNT_ORDER = 220;
+const MAX_COUNT_ORDER = 250;
 const MAX_ITEM_ORDER = 12;
 const FILE_ITEM = "./data/item.txt";
 const FILE_CI = "./data/ci.txt";
@@ -21,7 +21,7 @@ const FILE_TEST = "./data/test.txt";
 const FILE_ITEM_STOCK = "./data/item-stock.txt";
 const SUCCESS_FILE = "./data/success.txt";
 const URL_LOGIN_ACCOUNT = "https://www.walmart.com/account/login";
-
+const PROFILE_ROOT = "D:\\profile_gologin";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const projectPath = __dirname;
@@ -40,6 +40,7 @@ export {
   MAX_ITEM_ORDER,
   NAME_USER,
   PATH_PROFILE,
+  PROFILE_ROOT,
   STATE,
   SUCCESS_FILE,
   TIMEOUT_REQUEST_PAGE,

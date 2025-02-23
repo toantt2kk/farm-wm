@@ -104,7 +104,6 @@ const checkoutProcess = async (page, info, price) => {
             logger.warn("[Checkout] Lỗi xác thực thẻ, giới hạn tiền.");
             status = "LIMIT_MONEY";
             await removeCard(page);
-            await delay(999);
             await acceptMoveOn(page);
             await updateCi(cardInfo.id, "error");
             continue;
@@ -151,18 +150,15 @@ const removeCard = async (page) => {
     }
     // Giả sử nút thứ 2 là nút Confirm
     await elements[1].click();
-    await sleeptime(1, 3);
-    await page.reload({
-      waitUntil: ["domcontentloaded"],
-      timeout: TIMEOUT_REQUEST_PAGE,
-    });
-    if (await clickByXPath(page, DOM_CHECKOUT.LEAVE, 0, 5)) {
-      await page.reload({
-        waitUntil: ["domcontentloaded"],
-        timeout: TIMEOUT_REQUEST_PAGE,
-      });
-      await sleeptime(1, 3);
+    if (await clickElement(page, 'button[aria-label="close wallet panel"]')) {
+      if (await clickByXPath(page, DOM_CHECKOUT.LEAVE, 0, 5)) {
+        await page.reload({
+          waitUntil: ["domcontentloaded"],
+          timeout: TIMEOUT_REQUEST_PAGE,
+        });
+      }
     }
+
     return true;
   } catch (error) {
     logger.error(`[Checkout] Lỗi khi xóa thẻ: ${error.message}`);

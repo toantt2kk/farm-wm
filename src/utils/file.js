@@ -2,12 +2,17 @@ import { existsSync, readFileSync, rmSync, writeFileSync } from "fs";
 import _ from "lodash";
 import { tmpdir } from "os";
 import { join } from "path";
+import { logger } from "./logger.js";
 
 const deleteProfile = (dir, profileId) => {
   if (!dir) {
     dir = join(tmpdir(), `gologin_profile_${profileId}`);
   } else {
     dir = join(dir, `gologin_profile_${profileId}`);
+  }
+  if (existsSync(dir)) {
+    logger.debug(`[Debug] Tệp ${dir} không tồn tại`);
+    return;
   }
   return rmSync(dir, { recursive: true } || false);
 };
