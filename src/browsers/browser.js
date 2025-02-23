@@ -89,8 +89,9 @@ const browserRunner = async (profileId, options) => {
         `[Lỗi trong quá trình khởi tạo trình duyệt (thử ${retries}/${MAX_RETRIES})] ${error}`
       );
       if (
-        error.includes("Proxy Error.") ||
-        error.includes("Proxy connection timed out")
+        error.message.includes("Proxy Error.") ||
+        error.message.includes("Proxy connection timed out") ||
+        error.message.includes("socket hang up")
       ) {
         isConnectedProxy = true;
         break;
