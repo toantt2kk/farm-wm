@@ -45,7 +45,7 @@ const DOM_CHECKOUT = {
   ERROR_CARD_AUTH: 'div[aria-label="Error"]',
   SUBMIT_PAYMENT: '[form="single-form-add-payment"]',
   CONTINUE: '//button[contains(text(), "Continue")]',
-  LEAVE: '//button[contains(text(), "Continue")]',
+  LEAVE: '//button[contains(text(), "Leave")]',
   NO_ADD_PAYMENT:
     "//*[contains(text(), 'Your card could not be saved. Please use a different payment method')]",
   BUTTON_ORDER_PLACE: 'button[data-automation-id="place-order-button"]',
